@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Closet Makers | Inventory System</title>
+    <title>Home Workshop</title>
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -249,22 +249,6 @@
             return { category, typeDesc, icon, binId };
         };
 
-        // --- FUZZY SEARCH UTILITY ---
-        // Intelligently matches abbreviations like "bzr" to "buzzer" by checking if characters exist in order
-        const fuzzyMatch = (pattern, str) => {
-            pattern = pattern.toLowerCase().replace(/\s+/g, ''); // ignore spaces
-            str = str.toLowerCase();
-            let patternIdx = 0;
-            let strIdx = 0;
-            while (patternIdx < pattern.length && strIdx < str.length) {
-                if (pattern[patternIdx] === str[strIdx]) {
-                    patternIdx++;
-                }
-                strIdx++;
-            }
-            return patternIdx === pattern.length;
-        };
-
         const App = () => {
             const [searchTerm, setSearchTerm] = useState("");
             const [activeFilter, setActiveFilter] = useState("All");
@@ -309,17 +293,18 @@
             const filteredInventory = useMemo(() => {
                 let filtered = inventory;
                 
-                // Text Search
+                // Super Precise Text Search
                 if (searchTerm.trim() !== "") {
-                    const term = searchTerm.toLowerCase();
-                    filtered = filtered.filter(item => 
-                        item.name.toLowerCase().includes(term) ||
-                        item.drawer.toLowerCase().includes(term) ||
-                        item.bag.toLowerCase().includes(term) ||
-                        item.category.toLowerCase().includes(term) ||
-                        fuzzyMatch(term, item.name) ||
-                        fuzzyMatch(term, item.category)
-                    );
+                    // Split the search input by spaces so users can search multiple precise words
+                    const searchTerms = searchTerm.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+                    
+                    filtered = filtered.filter(item => {
+                        // Combine all searchable fields into one string for this item
+                        const searchableString = `${item.name} ${item.drawer} ${item.bag} ${item.category}`.toLowerCase();
+                        
+                        // Ensure EVERY word typed in the search exists in the item's details
+                        return searchTerms.every(term => searchableString.includes(term));
+                    });
                 }
 
                 // Category Filter
@@ -340,7 +325,7 @@
                         <div>
                             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-3 justify-center md:justify-start">
                                 <span className="text-uranium"><Icons.Chip /></span>
-                                Closet <span className="text-transparent bg-clip-text bg-gradient-to-r from-uranium to-green-400">Makers</span>
+                                Home <span className="text-transparent bg-clip-text bg-gradient-to-r from-uranium to-green-400">Workshop</span>
                             </h1>
                             <p className="text-night-400 text-sm md:text-base text-gray-400">
                                 Advanced Component Locator & Inventory Database
