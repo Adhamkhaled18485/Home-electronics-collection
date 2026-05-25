@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closet Makers | Inventory System</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration for Night Blue & Uranium Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        night: {
+                            900: '#050a14', // Deepest night blue (background)
+                            800: '#0a1326', // Rich night blue (cards/inputs)
+                            700: '#111d38', // Lighter night blue (borders/hovers)
+                            600: '#1a2a4f',
+                        },
+                        uranium: {
+                            DEFAULT: '#CBFB45', // Bright glowing radioactive green/yellow
+                            dark: '#a8d924',
+                            glow: 'rgba(203, 251, 69, 0.2)',
+                            strongGlow: 'rgba(203, 251, 69, 0.5)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050a14;
+            color: #ffffff;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar styled with Uranium/Night themes */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050a14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #111d38;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #CBFB45;
+        }
+
+        /* Subtle background glow effect */
+        .bg-glow {
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 50vw;
+            height: 50vh;
+            background: radial-gradient(circle, rgba(203,251,69,0.05) 0%, rgba(5,10,20,0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .bg-glow-2 {
+            position: fixed;
+            bottom: -20%;
+            right: -10%;
+            width: 50vw;
+            height: 50vh;
+            background: radial-gradient(circle, rgba(26,42,79,0.3) 0%, rgba(5,10,20,0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="bg-glow-2"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- RAW DATA FROM DOCUMENT ---
+        const rawInventoryData = [
+            {
+                drawer: "First Drawer",
+                bags: [
+                    {
+                        bag: "First Bag",
+                        items: [
+                            "Arduino fiber cable (1)", "Red Motor driver (1)", "Ultrasonic stand (1)", "Metal curve stand (1)",
+                            "Resistors (220 ohm) (1k ohm)", "Capacitors 470uf", "Mosfet IRF 530", "Small Buzzer", "(RGB) Leds",
+                            "Capacitor 103uf", "Purple batteries (3.7v)", "Battery cover, holder", "Big breadboard", "Big cooler",
+                            "Ds3231 RTC module", "Current sensor", "Red Push button", "Gas sensor", "Some jumper wires",
+                            "Arduino r4", "Micro servo 9g", "Esp32 cam , with sim card module", "Pass kart",
+                            "Tp 661 motor driver (pink)", "4 wheels", "Esp cam connecter", "Screws kit", "Sticks glue Gun",
+                            "Arduino mega", "Small breadboard", "PCB boards", "Small speaker", "Flame sensor", "Rain sensor",
+                            "5v relay module (type 1)", "5v adapter"
+                        ]
+                    },
+                    {
+                        bag: "Second Bag",
+                        items: [
+                            "Battery charger", "Wires kit", "71A IC", "RFID sensor", "HC-05 Bluetooth module",
+                            "Motor car (dark yellow)", "Buck converter", "Switch", "Battery holder (2)", "ICM-701A IC",
+                            "Motor gear", "Speaker module", "Transparent Duct tape", "BMP 280 sensor", "Some wires"
+                        ]
+                    },
+                    {
+                        bag: "Third Bag",
+                        items: ["Cutting machine with green box tools", "Lego screwing machine box"]
+                    },
+                    {
+                        bag: "Fourth Bag",
+                        items: ["Body Car (yellow)", "Led screen broken", "Screws whole kit and others bag"]
+                    }
+                ]
+            },
+            {
+                drawer: "Second Drawer",
+                bags: [
+                    {
+                        bag: "First Bag",
+                        items: [
+                            "Relay module (4 channel)", "Esp32 module", "Temperature sensor", "Rain sensor",
+                            "Soil moisture sensor", "9v battery holder", "Joystick module", "HC-06 Bluetooth module",
+                            "Light sensor", "Adapters many shapes", "Motor gear (dark yellow)", "Adapter (1.5vto 12v)",
+                            "Male jumper wires"
+                        ]
+                    },
+                    {
+                        bag: "Second Bag",
+                        items: ["Small breadboard", "Line follower 8 sensors", "Free wheel"]
+                    },
+                    {
+                        bag: "Third Bag",
+                        items: [
+                            "LCD 16x20", "I2C module", "M3 screws with nuts", "Soil moisture sensor", "Line detector sensor",
+                            "Light sensor", "Small Buzzer", "220-ohm resistor", "Transistor c-945 b-818", "G B leds",
+                            "Some wires", "Arduino uno r3", "OLed screen", "2 wheels", "Buttons", "Blue motor driver"
+                        ]
+                    }
+                ]
+            },
+            {
+                drawer: "Third Drawer",
+                bags: [
+                    {
+                        bag: "First bag",
+                        items: [
+                            "Heat shrink (2m)", "Wires (2m)", "Glue Gun", "Battery 9v", "Rechargeable Battery 1400",
+                            "Lithium battery 3.7v", "Big PCB board", "Small breadboard", "Medium breadboard", "Nilon cables",
+                            "Wires", "Small cooler", "Pin code tableau", "8 relay modules", "Arduino uno r4", "Capacitor 104 Z",
+                            "Diodes 4N4007", "TFT table", "Voice recognition sensor", "Battery cover", "Motor mg966R black",
+                            "Water sensor", "Potentiometer", "8 segment encoders (digital)", "220-ohm red and yellow leds",
+                            "White leds", "Multi-side button", "Motor gear", "Small buzzer", "1M resistors", "Switch button",
+                            "3 Benz buzzer", "Button", "Wires"
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // --- HELPER ICONS (Inline SVGs) ---
+        const Icons = {
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>,
+            Box: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>,
+            Bag: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>,
+            Chip: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>,
+            Tool: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>,
+            Zap: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>,
+            Wire: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2v12a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9H4z"></path></svg>,
+            Info: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>,
+            QrCode: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>,
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        };
+
+        // --- DATA ENRICHMENT UTILITY ---
+        // Adds extra "details" to items based on keywords since real datasheets aren't provided
+        const enrichItem = (name, index) => {
+            let category = "Misc Component";
+            let typeDesc = "General electronic or structural component.";
+            let icon = Icons.Box;
+            const lowerName = name.toLowerCase();
+
+            if (lowerName.match(/arduino|esp|raspberry|micro|rtc/)) {
+                category = "Microcontroller / Board";
+                typeDesc = "Programmable logic board or core processing module.";
+                icon = Icons.Chip;
+            } else if (lowerName.match(/sensor|module|joystick|encoder|rfid/)) {
+                category = "Sensor / Module";
+                typeDesc = "Input/Output module for environmental or physical data.";
+                icon = Icons.Chip;
+            } else if (lowerName.match(/motor|servo|gear|wheel|car/)) {
+                category = "Actuator / Mechanics";
+                typeDesc = "Electromechanical component for physical movement.";
+                icon = Icons.Tool;
+            } else if (lowerName.match(/battery|adapter|converter|power|charger/)) {
+                category = "Power Supply";
+                typeDesc = "Energy source, conversion, or regulation component.";
+                icon = Icons.Zap;
+            } else if (lowerName.match(/resistor|capacitor|diode|transistor|mosfet|ic |relay/)) {
+                category = "Core Component";
+                typeDesc = "Fundamental discrete electronic component.";
+                icon = Icons.Chip;
+            } else if (lowerName.match(/wire|cable|jumper|breadboard|pcb/)) {
+                category = "Prototyping / Wiring";
+                typeDesc = "Connectivity and testing foundation elements.";
+                icon = Icons.Wire;
+            } else if (lowerName.match(/led|screen|lcd|oled|tft|buzzer|speaker/)) {
+                category = "Display / Audio (Output)";
+                typeDesc = "Visual or auditory feedback component.";
+                icon = Icons.Zap;
+            } else if (lowerName.match(/screw|stand|glue|tape|machine|box|nut/)) {
+                category = "Hardware / Tools";
+                typeDesc = "Physical mounting, adhesion, or construction tool.";
+                icon = Icons.Tool;
+            }
+
+            // Generate a fake but realistic looking Part/Bin Number for UI richness
+            const binId = `BIN-${(index * 13 % 999).toString().padStart(3, '0')}`;
+            
+            return { category, typeDesc, icon, binId };
+        };
+
+        // --- FUZZY SEARCH UTILITY ---
+        // Intelligently matches abbreviations like "bzr" to "buzzer" by checking if characters exist in order
+        const fuzzyMatch = (pattern, str) => {
+            pattern = pattern.toLowerCase().replace(/\s+/g, ''); // ignore spaces
+            str = str.toLowerCase();
+            let patternIdx = 0;
+            let strIdx = 0;
+            while (patternIdx < pattern.length && strIdx < str.length) {
+                if (pattern[patternIdx] === str[strIdx]) {
+                    patternIdx++;
+                }
+                strIdx++;
+            }
+            return patternIdx === pattern.length;
+        };
+
+        const App = () => {
+            const [searchTerm, setSearchTerm] = useState("");
+            const [activeFilter, setActiveFilter] = useState("All");
+            const [showQr, setShowQr] = useState(false);
+            const [pageUrl, setPageUrl] = useState("");
+
+            useEffect(() => {
+                // Gets the current URL. If it's a sandbox/iframe (like 'about:srcdoc'), provide a helpful placeholder.
+                let currentUrl = window.location.href;
+                if (currentUrl === 'about:srcdoc' || currentUrl.startsWith('blob:') || currentUrl.startsWith('file:')) {
+                    currentUrl = "http://192.168.1.X:5500/inventory.html"; // Placeholder to prompt user to host it
+                }
+                setPageUrl(currentUrl);
+            }, []);
+
+            // Process and flatten data on load
+            const inventory = useMemo(() => {
+                let flatList = [];
+                let globalIndex = 0;
+                rawInventoryData.forEach(drawerObj => {
+                    drawerObj.bags.forEach(bagObj => {
+                        bagObj.items.forEach(itemName => {
+                            globalIndex++;
+                            const enrichment = enrichItem(itemName, globalIndex);
+                            flatList.push({
+                                id: `item-${globalIndex}`,
+                                name: itemName,
+                                drawer: drawerObj.drawer,
+                                bag: bagObj.bag,
+                                category: enrichment.category,
+                                desc: enrichment.typeDesc,
+                                Icon: enrichment.icon,
+                                binId: enrichment.binId
+                            });
+                        });
+                    });
+                });
+                return flatList;
+            }, []);
+
+            // Filter logic
+            const filteredInventory = useMemo(() => {
+                let filtered = inventory;
+                
+                // Text Search
+                if (searchTerm.trim() !== "") {
+                    const term = searchTerm.toLowerCase();
+                    filtered = filtered.filter(item => 
+                        item.name.toLowerCase().includes(term) ||
+                        item.drawer.toLowerCase().includes(term) ||
+                        item.bag.toLowerCase().includes(term) ||
+                        item.category.toLowerCase().includes(term) ||
+                        fuzzyMatch(term, item.name) ||
+                        fuzzyMatch(term, item.category)
+                    );
+                }
+
+                // Category Filter
+                if (activeFilter !== "All") {
+                    filtered = filtered.filter(item => item.category === activeFilter);
+                }
+
+                return filtered;
+            }, [searchTerm, inventory, activeFilter]);
+
+            // Unique categories for filter pills
+            const categories = ["All", ...new Set(inventory.map(item => item.category))];
+
+            return (
+                <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto">
+                    {/* Header */}
+                    <header className="mb-10 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div>
+                            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-3 justify-center md:justify-start">
+                                <span className="text-uranium"><Icons.Chip /></span>
+                                Closet <span className="text-transparent bg-clip-text bg-gradient-to-r from-uranium to-green-400">Makers</span>
+                            </h1>
+                            <p className="text-night-400 text-sm md:text-base text-gray-400">
+                                Advanced Component Locator & Inventory Database
+                            </p>
+                        </div>
+                        <div className="flex gap-4 items-center">
+                            <button 
+                                onClick={() => setShowQr(true)}
+                                className="bg-night-800 border border-night-700 hover:border-uranium px-4 py-3 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg transition-all duration-300 group"
+                                title="Show QR Code"
+                            >
+                                <span className="text-gray-400 group-hover:text-uranium transition-colors"><Icons.QrCode /></span>
+                                <span className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-uranium transition-colors">Scan</span>
+                            </button>
+                            <div className="bg-night-800 border border-night-700 px-6 py-3 rounded-xl flex items-center gap-4 shadow-lg">
+                                <div className="text-center">
+                                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Items</p>
+                                    <p className="text-2xl font-mono text-uranium font-bold">{inventory.length}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Search Bar */}
+                    <div className="relative mb-8 group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-uranium transition-colors">
+                            <Icons.Search />
+                        </div>
+                        <input 
+                            type="text" 
+                            className="w-full bg-night-800/80 border-2 border-night-700 text-white placeholder-gray-500 rounded-2xl py-4 pl-12 pr-6 text-lg focus:outline-none focus:border-uranium focus:ring-1 focus:ring-uranium transition-all duration-300 shadow-lg shadow-black/20"
+                            placeholder="Search components, drawers, bags, or categories..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {/* Glowing effect under search bar when focused */}
+                        <div className="absolute -inset-0.5 bg-uranium opacity-0 group-focus-within:opacity-20 rounded-2xl blur transition duration-500 -z-10"></div>
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="flex overflow-x-auto pb-4 mb-6 gap-2 hide-scrollbar">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveFilter(cat)}
+                                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border 
+                                    ${activeFilter === cat 
+                                        ? 'bg-uranium/10 border-uranium text-uranium shadow-[0_0_10px_rgba(203,251,69,0.2)]' 
+                                        : 'bg-night-800 border-night-700 text-gray-400 hover:text-white hover:border-night-600'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Results Grid */}
+                    <div className="mb-6 flex justify-between items-center text-sm text-gray-400 font-medium">
+                        <span>Showing {filteredInventory.length} result{filteredInventory.length !== 1 ? 's' : ''}</span>
+                    </div>
+
+                    {filteredInventory.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredInventory.map(item => (
+                                <div key={item.id} className="group bg-night-800 rounded-2xl border border-night-700 overflow-hidden hover:border-uranium transition-all duration-300 hover:shadow-[0_0_20px_rgba(203,251,69,0.15)] flex flex-col h-full relative">
+                                    
+                                    {/* Top colored accent line */}
+                                    <div className="h-1 w-full bg-gradient-to-r from-night-700 via-night-600 to-night-700 group-hover:from-uranium group-hover:via-green-400 group-hover:to-uranium transition-all duration-500"></div>
+                                    
+                                    <div className="p-5 flex-grow flex flex-col">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="p-2 bg-night-900 rounded-lg text-uranium border border-night-700 group-hover:bg-uranium/10 transition-colors">
+                                                <item.Icon />
+                                            </div>
+                                            <span className="text-xs font-mono text-gray-500 bg-night-900 px-2 py-1 rounded border border-night-700">
+                                                {item.binId}
+                                            </span>
+                                        </div>
+                                        
+                                        <h3 className="text-xl font-bold text-white mb-4 leading-tight">
+                                            {item.name}
+                                        </h3>
+                                        
+                                        <div className="mt-auto space-y-2">
+                                            <div className="flex items-center gap-2 text-sm text-gray-300 bg-night-900/50 p-2 rounded-lg border border-night-700/50">
+                                                <span className="text-blue-400"><Icons.Box /></span>
+                                                <span className="font-semibold text-gray-200">{item.drawer}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-gray-300 bg-night-900/50 p-2 rounded-lg border border-night-700/50">
+                                                <span className="text-purple-400"><Icons.Bag /></span>
+                                                <span className="font-semibold text-gray-200">{item.bag}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Expandable Details Section (Always visible but styled differently) */}
+                                    <div className="bg-night-900 border-t border-night-700 p-4">
+                                        <div className="flex items-start gap-2">
+                                            <div className="text-uranium mt-0.5"><Icons.Info /></div>
+                                            <div>
+                                                <p className="text-xs text-uranium font-semibold uppercase tracking-wider mb-1">
+                                                    {item.category}
+                                                </p>
+                                                <p className="text-xs text-gray-400 leading-relaxed">
+                                                    {item.desc}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-20 bg-night-800 rounded-3xl border border-night-700 border-dashed">
+                            <div className="text-night-600 mb-4 flex justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">No components found</h3>
+                            <p className="text-gray-400">
+                                We couldn't find anything matching "{searchTerm}".
+                            </p>
+                            <button 
+                                onClick={() => {setSearchTerm(""); setActiveFilter("All");}}
+                                className="mt-6 px-6 py-2 bg-night-700 hover:bg-night-600 text-white rounded-lg transition-colors border border-night-600 hover:border-uranium/50"
+                            >
+                                Clear Filters
+                            </button>
+                        </div>
+                    )}
+
+                    {/* QR Code Modal */}
+                    {showQr && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-night-900/80 backdrop-blur-sm p-4">
+                            <div className="bg-night-800 border border-night-700 rounded-3xl p-8 max-w-sm w-full relative shadow-[0_0_40px_rgba(203,251,69,0.15)] flex flex-col items-center">
+                                <button 
+                                    onClick={() => setShowQr(false)}
+                                    className="absolute top-4 right-4 text-gray-400 hover:text-white bg-night-900 rounded-full p-2 transition-colors border border-night-700 hover:border-white"
+                                >
+                                    <Icons.X />
+                                </button>
+                                <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                                    <span className="text-uranium"><Icons.QrCode /></span> Scan to Open
+                                </h2>
+                                <p className="text-xs text-gray-400 mb-4 text-center">
+                                    To open on your phone, you must host this file (e.g., using VS Code Live Server) and enter your network IP or website link below:
+                                </p>
+                                
+                                <input 
+                                    type="text"
+                                    value={pageUrl}
+                                    onChange={(e) => setPageUrl(e.target.value)}
+                                    className="w-full mb-6 bg-night-900 border border-night-600 text-sm text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-uranium focus:ring-1 focus:ring-uranium transition-all"
+                                    placeholder="https://..."
+                                />
+
+                                <div className="bg-white p-4 rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] min-h-[232px] flex items-center justify-center">
+                                    {pageUrl && pageUrl.trim() !== "" ? (
+                                        <img 
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pageUrl)}&margin=0`} 
+                                            alt="QR Code"
+                                            className="w-48 h-48"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'block';
+                                            }}
+                                        />
+                                    ) : (
+                                        <p className="text-gray-500 text-sm">Enter a URL to generate</p>
+                                    )}
+                                    <div style={{display: 'none'}} className="text-red-500 text-sm text-center font-semibold">
+                                        Failed to load QR code. Check your internet connection.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
