@@ -5,30 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Workshop</title>
     
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Tailwind Configuration for Night Blue & Uranium Colors -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         night: {
-                            900: '#050a14', // Deepest night blue (background)
-                            800: '#0a1326', // Rich night blue (cards/inputs)
-                            700: '#111d38', // Lighter night blue (borders/hovers)
+                            900: '#050a14', 
+                            800: '#0a1326', 
+                            700: '#111d38', 
                             600: '#1a2a4f',
                         },
                         uranium: {
-                            DEFAULT: '#CBFB45', // Bright glowing radioactive green/yellow
+                            DEFAULT: '#CBFB45', 
                             dark: '#a8d924',
                             glow: 'rgba(203, 251, 69, 0.2)',
                             strongGlow: 'rgba(203, 251, 69, 0.5)'
@@ -52,7 +48,6 @@
             overflow-x: hidden;
         }
 
-        /* Custom Scrollbar styled with Uranium/Night themes */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -67,7 +62,6 @@
             background: #CBFB45;
         }
 
-        /* Subtle background glow effect */
         .bg-glow {
             position: fixed;
             top: -20%;
@@ -103,7 +97,11 @@
     <div class="bg-glow-2"></div>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-presets="react,env">
+        // FIX: Force the classic JSX runtime to prevent the browser 'import' error
+        /** @jsx React.createElement */
+        /** @jsxFrag React.Fragment */
+
         const { useState, useEffect, useMemo } = React;
 
         // --- RAW DATA FROM DOCUMENT ---
@@ -202,7 +200,6 @@
         };
 
         // --- DATA ENRICHMENT UTILITY ---
-        // Adds extra "details" to items based on keywords since real datasheets aren't provided
         const enrichItem = (name, index) => {
             let category = "Misc Component";
             let typeDesc = "General electronic or structural component.";
@@ -243,9 +240,7 @@
                 icon = Icons.Tool;
             }
 
-            // Generate a fake but realistic looking Part/Bin Number for UI richness
             const binId = `BIN-${(index * 13 % 999).toString().padStart(3, '0')}`;
-            
             return { category, typeDesc, icon, binId };
         };
 
@@ -256,15 +251,13 @@
             const [pageUrl, setPageUrl] = useState("");
 
             useEffect(() => {
-                // Gets the current URL. If it's a sandbox/iframe (like 'about:srcdoc'), provide a helpful placeholder.
                 let currentUrl = window.location.href;
                 if (currentUrl === 'about:srcdoc' || currentUrl.startsWith('blob:') || currentUrl.startsWith('file:')) {
-                    currentUrl = "http://192.168.1.X:5500/inventory.html"; // Placeholder to prompt user to host it
+                    currentUrl = "http://192.168.1.X:5500/inventory.html";
                 }
                 setPageUrl(currentUrl);
             }, []);
 
-            // Process and flatten data on load
             const inventory = useMemo(() => {
                 let flatList = [];
                 let globalIndex = 0;
@@ -289,38 +282,25 @@
                 return flatList;
             }, []);
 
-            // Filter logic
             const filteredInventory = useMemo(() => {
                 let filtered = inventory;
-                
-                // Super Precise Text Search
                 if (searchTerm.trim() !== "") {
-                    // Split the search input by spaces so users can search multiple precise words
                     const searchTerms = searchTerm.toLowerCase().split(/\s+/).filter(term => term.length > 0);
-                    
                     filtered = filtered.filter(item => {
-                        // Combine all searchable fields into one string for this item
                         const searchableString = `${item.name} ${item.drawer} ${item.bag} ${item.category}`.toLowerCase();
-                        
-                        // Ensure EVERY word typed in the search exists in the item's details
                         return searchTerms.every(term => searchableString.includes(term));
                     });
                 }
-
-                // Category Filter
                 if (activeFilter !== "All") {
                     filtered = filtered.filter(item => item.category === activeFilter);
                 }
-
                 return filtered;
             }, [searchTerm, inventory, activeFilter]);
 
-            // Unique categories for filter pills
             const categories = ["All", ...new Set(inventory.map(item => item.category))];
 
             return (
                 <div className="min-h-screen p-6 md:p-12 max-w-7xl mx-auto">
-                    {/* Header */}
                     <header className="mb-10 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6">
                         <div>
                             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-3 justify-center md:justify-start">
@@ -349,7 +329,6 @@
                         </div>
                     </header>
 
-                    {/* Search Bar */}
                     <div className="relative mb-8 group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-uranium transition-colors">
                             <Icons.Search />
@@ -361,11 +340,9 @@
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        {/* Glowing effect under search bar when focused */}
                         <div className="absolute -inset-0.5 bg-uranium opacity-0 group-focus-within:opacity-20 rounded-2xl blur transition duration-500 -z-10"></div>
                     </div>
 
-                    {/* Filter Pills */}
                     <div className="flex overflow-x-auto pb-4 mb-6 gap-2 hide-scrollbar">
                         {categories.map(cat => (
                             <button
@@ -382,7 +359,6 @@
                         ))}
                     </div>
 
-                    {/* Results Grid */}
                     <div className="mb-6 flex justify-between items-center text-sm text-gray-400 font-medium">
                         <span>Showing {filteredInventory.length} result{filteredInventory.length !== 1 ? 's' : ''}</span>
                     </div>
@@ -391,10 +367,7 @@
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredInventory.map(item => (
                                 <div key={item.id} className="group bg-night-800 rounded-2xl border border-night-700 overflow-hidden hover:border-uranium transition-all duration-300 hover:shadow-[0_0_20px_rgba(203,251,69,0.15)] flex flex-col h-full relative">
-                                    
-                                    {/* Top colored accent line */}
                                     <div className="h-1 w-full bg-gradient-to-r from-night-700 via-night-600 to-night-700 group-hover:from-uranium group-hover:via-green-400 group-hover:to-uranium transition-all duration-500"></div>
-                                    
                                     <div className="p-5 flex-grow flex flex-col">
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="p-2 bg-night-900 rounded-lg text-uranium border border-night-700 group-hover:bg-uranium/10 transition-colors">
@@ -404,11 +377,9 @@
                                                 {item.binId}
                                             </span>
                                         </div>
-                                        
                                         <h3 className="text-xl font-bold text-white mb-4 leading-tight">
                                             {item.name}
                                         </h3>
-                                        
                                         <div className="mt-auto space-y-2">
                                             <div className="flex items-center gap-2 text-sm text-gray-300 bg-night-900/50 p-2 rounded-lg border border-night-700/50">
                                                 <span className="text-blue-400"><Icons.Box /></span>
@@ -420,8 +391,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    {/* Expandable Details Section (Always visible but styled differently) */}
                                     <div className="bg-night-900 border-t border-night-700 p-4">
                                         <div className="flex items-start gap-2">
                                             <div className="text-uranium mt-0.5"><Icons.Info /></div>
@@ -456,7 +425,6 @@
                         </div>
                     )}
 
-                    {/* QR Code Modal */}
                     {showQr && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-night-900/80 backdrop-blur-sm p-4">
                             <div className="bg-night-800 border border-night-700 rounded-3xl p-8 max-w-sm w-full relative shadow-[0_0_40px_rgba(203,251,69,0.15)] flex flex-col items-center">
